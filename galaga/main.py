@@ -1,111 +1,136 @@
-
 import sys
 from PyQt5.QtCore import (
     Qt,
     QBasicTimer,
-    QEvent, QTimer)
+    QTimer)
 from PyQt5.QtGui import (
     QBrush,
     QPixmap
 )
 from PyQt5.QtWidgets import (
-    QApplication,
-    QGraphicsItem,
-    QGraphicsPixmapItem,
-    QGraphicsRectItem,
-    QGraphicsScene,
-    QGraphicsView
+    QApplication,  # Sama QT aplikacija
+    QGraphicsItem,  # Objekti ove klase mogu da se ubacuju u scenu, apstraktna,nasledjuje se
+    QGraphicsPixmapItem,  # Nasledjuje QGraphicsItem
+    QGraphicsRectItem,  # Nasledjuje QGraphicsItem
+    QGraphicsScene,  # U objekat scene ubacujemo sve iteme koje zelimo da iscrtamo
+    QGraphicsView  # Da bi nacrtali scenu treba nam objekat ove klase
 )
 
-SCREEN_WIDTH            = 800
-SCREEN_HEIGHT           = 600
-PLAYER_SPEED            = 7   # pix/frame
-PLAYER_BULLET_X_OFFSETS = [25,45]
-PLAYER_BULLET_Y         = 15
-BULLET_SPEED            = 10  # pix/frame
-BULLET_FRAMES           = 90
-FRAME_TIME_MS           = 16  # ms/frame
-
-ENEMY_BULLET_X_OFFSETS  = [25, 25]
-ENEMY_BULLET_Y          = 15
-ENEMY_SPEED             = 14
+SCREEN_WIDTH = 800
+SCREEN_HEIGHT = 600
+PLAYER_SPEED = 3  # pix/frame
+PLAYER_BULLET_X_OFFSETS = [0, 32]
+PLAYER_BULLET_Y = 15
+BULLET_SPEED = 10  # pix/frame
+BULLET_FRAMES = 50
+FRAME_TIME_MS = 16  # ms/frame
 
 
-class Player(QGraphicsPixmapItem):
-    def __init__(self, parent = None):
-        QGraphicsPixmapItem.__init__(self,parent)
-        self.setPixmap(QPixmap("brod.jpg"))
+class Enemy(QGraphicsPixmapItem):
+    def __init__(self, x, y, parent=None):
+        QGraphicsPixmapItem.__init__(self, parent)
+        self.setPixmap(QPixmap("enemyRed2.png"))
+        self.setPos(x, y)
+
+    """def enemy_update(self, levo, desno):
+        if desno > 0 and desno < 8:
+            desno += 1
+            if desno == 8:
+                desno = 0
+            self.setPos(self.x()+20, self.y())
+        elif levo > 0 and desno < 8:
+            levo += 1
+            if levo == 8:
+                levo = 0
+            self.setPos(self.x()-20, self.y())"""
+
+    def move_left(self):
+        self.setPos(self.x() - 20, self.y())
+
+    def move_right(self):
+        self.setPos(self.x() + 20, self.y())
+
+
+class Player1(QGraphicsPixmapItem):
+    def __init__(self, parent=None):
+        QGraphicsPixmapItem.__init__(self, parent)
+        self.setPixmap(QPixmap("playerShip1_blue.png"))
 
     def game_update(self, keys_pressed):
         dx = 0
-        #dy = 0
+        dy = 0
         if Qt.Key_Left in keys_pressed:
             dx -= PLAYER_SPEED
         if Qt.Key_Right in keys_pressed:
             dx += PLAYER_SPEED
-        self.setPos(self.x()+dx, 520)
+        self.setPos(self.x() + dx, self.y() + dy)
 
 
-class Enemy(QGraphicsPixmapItem):
-    def __init__(self, x, y, parent = None):
-        QGraphicsPixmapItem.__init__(self,parent)
-        self.setPixmap(QPixmap("ptica.jpg"))
-        self.setPos(x,y)
+class Player2(QGraphicsPixmapItem):
+    def __init__(self, parent=None):
+        QGraphicsPixmapItem.__init__(self, parent)
+        self.setPixmap(QPixmap("playerShip1_red.png"))
+
+    def game_update(self, keys_pressed):
+        dx = 0
+        dy = 0
+        if Qt.Key_A in keys_pressed:
+            dx -= PLAYER_SPEED
+        if Qt.Key_D in keys_pressed:
+            dx += PLAYER_SPEED
+        self.setPos(self.x() + dx, self.y() + dy)
 
 
-    def enemy_update(self):
-        self.setPos(self.x()+20, 30)
-
-
-class BulletEnemy(QGraphicsPixmapItem):
-    def __init__(self, offset_x, offset_y, parent = None):
-        QGraphicsPixmapItem.__init__(self,parent)
-        self.setPixmap(QPixmap("puca.png"))
+class Bullet1(QGraphicsPixmapItem):
+    def __init__(self, offset_x, offset_y, parent=None):
+        QGraphicsPixmapItem.__init__(self, parent)
+        self.setPixmap(QPixmap("laserBlue07.png"))
         self.offset_x = offset_x
         self.offset_y = offset_y
         self.active = False
         self.frames = 0
 
-    def game_update(self, keys_pressed, player):
+    def game_update(self, keys_pressed, player1):
         if not self.active:
             if Qt.Key_Space in keys_pressed:
                 self.active = True
-                self.setPos(player.x()+self.offset_x,player.y()+self.offset_y)
+                self.setPos(player1.x() + self.offset_x, player1.y() + self.offset_y)
                 self.frames = BULLET_FRAMES
+
         else:
-            self.setPos(self.x(),self.y()-BULLET_SPEED)
+            self.setPos(self.x(), self.y() - BULLET_SPEED)
             self.frames -= 1
             if self.frames <= 0:
                 self.active = False
-                self.setPos(SCREEN_WIDTH,SCREEN_HEIGHT)
+                self.setPos(SCREEN_WIDTH, SCREEN_HEIGHT)
 
 
-class Bullet(QGraphicsPixmapItem):
-    def __init__(self, offset_x, offset_y, parent = None):
-        QGraphicsPixmapItem.__init__(self,parent)
-        self.setPixmap(QPixmap("puca.png"))
+class Bullet2(QGraphicsPixmapItem):
+    def __init__(self, offset_x, offset_y, parent=None):
+        QGraphicsPixmapItem.__init__(self, parent)
+        self.setPixmap(QPixmap("laserBlue07.png"))
         self.offset_x = offset_x
         self.offset_y = offset_y
         self.active = False
         self.frames = 0
 
-    def game_update(self, keys_pressed, player):
+    def game_update(self, keys_pressed, player2):
         if not self.active:
-            if Qt.Key_Space in keys_pressed:
-                self.active = True
-                self.setPos(player.x()+self.offset_x,player.y()+self.offset_y)
+            if Qt.Key_Control in keys_pressed:
+                self.active = True;
+                self.setPos(player2.x() + self.offset_x, player2.y() + self.offset_y)
                 self.frames = BULLET_FRAMES
+
         else:
-            self.setPos(self.x(),self.y()-BULLET_SPEED)
+            self.setPos(self.x(), self.y() - BULLET_SPEED)
             self.frames -= 1
             if self.frames <= 0:
                 self.active = False
-                self.setPos(SCREEN_WIDTH,SCREEN_HEIGHT)
-
+                self.setPos(SCREEN_WIDTH, SCREEN_HEIGHT)
 
 
 class Scene(QGraphicsScene):
-    def __init__(self, parent = None):
+    def __init__(self, parent=None):
         QGraphicsScene.__init__(self, parent)
 
         # hold the set of keys we're pressing
@@ -116,42 +141,64 @@ class Scene(QGraphicsScene):
         self.timer.start(FRAME_TIME_MS, self)
 
         self.timerEnemy = QTimer()
-        #self.timerEnemy.timeout.connect(self.enemy_update)
+        self.timerEnemy.timeout.connect(self.game_update_enemy)
         self.timerEnemy.start(1000)
 
-
         bg = QGraphicsRectItem()
-        bg.setRect(-1,-1,SCREEN_WIDTH+2,SCREEN_HEIGHT+2)
+        bg.setRect(-1, -1, SCREEN_WIDTH + 2, SCREEN_HEIGHT + 2)
         bg.setBrush(QBrush(Qt.black))
         self.addItem(bg)
 
-        self.enemies = [Enemy(10, 10), Enemy(50, 10), Enemy(90, 10), Enemy(130, 10), Enemy(170, 10), Enemy(210, 10),
-                        Enemy(250, 10), Enemy(290, 10), Enemy(330, 10), Enemy(370, 10), Enemy(10, 50), Enemy(50, 50),
-                        Enemy(90, 50), Enemy(130, 50), Enemy(170, 50), Enemy(210, 50), Enemy(250, 50), Enemy(290, 50),
-                        Enemy(330, 50), Enemy(370, 50), Enemy(10, 90), Enemy(50, 90), Enemy(90, 90), Enemy(130, 90),
-                        Enemy(170, 90), Enemy(210, 90), Enemy(250, 90), Enemy(290, 90), Enemy(330, 90), Enemy(370, 90)]
+        self.levo = 1
+        self.desno = 5
+
+        self.enemies = [Enemy(131, 10), Enemy(173, 10), Enemy(215, 10), Enemy(257, 10), Enemy(299, 10), Enemy(341, 10),
+                        Enemy(383, 10), Enemy(425, 10), Enemy(467, 10), Enemy(509, 10),
+                        Enemy(131, 50), Enemy(173, 50), Enemy(215, 50), Enemy(257, 50), Enemy(299, 50), Enemy(341, 50),
+                        Enemy(383, 50), Enemy(425, 50), Enemy(467, 50), Enemy(509, 50),
+                        Enemy(131, 90), Enemy(173, 90), Enemy(215, 90), Enemy(257, 90), Enemy(299, 90), Enemy(341, 90),
+                        Enemy(383, 90), Enemy(425, 90), Enemy(467, 90), Enemy(509, 90)]
 
         for e in self.enemies:
             self.addItem(e)
 
-        self.player = Player()
-        self.player.setPos((SCREEN_WIDTH-self.player.pixmap().width())/2/2,
-                           (SCREEN_HEIGHT-self.player.pixmap().height())-80)
-        self.bullets = [Bullet(PLAYER_BULLET_X_OFFSETS[0],PLAYER_BULLET_Y)]
-                        #Bullet(PLAYER_BULLET_X_OFFSETS[1],PLAYER_BULLET_Y)]
+        self.player1 = Player1()
+        self.player1.setPos(20, 530)
+        self.player2 = Player2()
+        self.player2.setPos(589, 530)
+        self.bullets1 = [  #Bullet(PLAYER_BULLET_X_OFFSETS[0], PLAYER_BULLET_Y),
+            Bullet1(PLAYER_BULLET_X_OFFSETS[1], PLAYER_BULLET_Y)]
 
-        for b in self.bullets:
-            b.setPos(SCREEN_WIDTH,SCREEN_HEIGHT)
+        self.bullets2 = [  # Bullet(PLAYER_BULLET_X_OFFSETS[0], PLAYER_BULLET_Y),
+            Bullet2(PLAYER_BULLET_X_OFFSETS[1], PLAYER_BULLET_Y)
+        ]
+        for b in self.bullets1:
+            b.setPos(SCREEN_WIDTH, SCREEN_HEIGHT)
             self.addItem(b)
-        self.addItem(self.player)
+        for b in self.bullets2:
+            b.setPos(SCREEN_WIDTH, SCREEN_HEIGHT)
+            self.addItem(b)
+        self.addItem(self.player1)
+        self.addItem(self.player2)
+
+        score = QGraphicsRectItem()
+        score.setRect(672, -1, 128, SCREEN_HEIGHT + 2)
+        score.setBrush(QBrush(Qt.yellow))
+        self.addItem(score)
+
+        self.slika = QGraphicsPixmapItem()
+        self.slika.setPixmap(QPixmap("playerShip1_red.png"))
+        self.slika.setPos(100, 100)
+        #self.slika.active = False
+        #self.slika.frames = 0
+        self.addItem(self.slika)
 
         self.view = QGraphicsView(self)
-        self.view.setWindowTitle("Galaga")
         self.view.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         self.view.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         self.view.show()
-        self.view.setFixedSize(SCREEN_WIDTH,SCREEN_HEIGHT)
-        self.setSceneRect(0,0,SCREEN_WIDTH,SCREEN_HEIGHT)
+        self.view.setFixedSize(SCREEN_WIDTH, SCREEN_HEIGHT)
+        self.setSceneRect(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT)
 
     def keyPressEvent(self, event):
         self.keys_pressed.add(event.key())
@@ -164,13 +211,30 @@ class Scene(QGraphicsScene):
         self.update()
 
     def game_update(self):
-        self.player.game_update(self.keys_pressed)
-        for b in self.bullets:
-            b.game_update(self.keys_pressed, self.player)
+        self.player1.game_update(self.keys_pressed)
+        self.player2.game_update(self.keys_pressed)
+        for b in self.bullets1:
+            b.game_update(self.keys_pressed, self.player1)
+        for b in self.bullets2:
+            b.game_update(self.keys_pressed, self.player2)
 
-    def enemy_update1(self):
-        for e in self.enemies:
-            e.enemy_update(self)
+    def game_update_enemy(self):
+        if 0 < self.desno < 9:
+            self.desno += 1
+            if self.desno == 9:
+                self.desno = 0
+                self.levo = 1
+            for e in self.enemies:
+                e.move_right()
+        elif 0 < self.levo < 9:
+            self.levo += 1
+            if self.levo == 9:
+                self.levo = 0
+                self.desno = 1
+            for e in self.enemies:
+                e.move_left()
+
+
 
 
 if __name__ == '__main__':
