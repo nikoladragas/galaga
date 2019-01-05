@@ -22,7 +22,7 @@ PLAYER_SPEED = 3  # pix/frame
 PLAYER_BULLET_X_OFFSETS = [0, 32]
 PLAYER_BULLET_Y = 15
 BULLET_SPEED = 10  # pix/frame
-BULLET_FRAMES = 50
+BULLET_FRAMES = 55
 FRAME_TIME_MS = 16  # ms/frame
 
 
@@ -58,12 +58,13 @@ class Player1(QGraphicsPixmapItem):
 
     def game_update(self, keys_pressed):
         dx = 0
-        dy = 0
         if Qt.Key_Left in keys_pressed:
-            dx -= PLAYER_SPEED
+            if self.x() > 0:
+                dx -= PLAYER_SPEED
         if Qt.Key_Right in keys_pressed:
-            dx += PLAYER_SPEED
-        self.setPos(self.x() + dx, self.y() + dy)
+            if self.x() < 604:
+                dx += PLAYER_SPEED
+        self.setPos(self.x() + dx, self.y())
 
 
 class Player2(QGraphicsPixmapItem):
@@ -73,12 +74,13 @@ class Player2(QGraphicsPixmapItem):
 
     def game_update(self, keys_pressed):
         dx = 0
-        dy = 0
         if Qt.Key_A in keys_pressed:
-            dx -= PLAYER_SPEED
+            if self.x() > 0:
+                dx -= PLAYER_SPEED
         if Qt.Key_D in keys_pressed:
-            dx += PLAYER_SPEED
-        self.setPos(self.x() + dx, self.y() + dy)
+            if self.x() < 604:
+                dx += PLAYER_SPEED
+        self.setPos(self.x() + dx, self.y())
 
 
 class Bullet1(QGraphicsPixmapItem):
@@ -92,7 +94,7 @@ class Bullet1(QGraphicsPixmapItem):
 
     def game_update(self, keys_pressed, player1):
         if not self.active:
-            if Qt.Key_Space in keys_pressed:
+            if Qt.Key_0 in keys_pressed:
                 self.active = True
                 self.setPos(player1.x() + self.offset_x, player1.y() + self.offset_y)
                 self.frames = BULLET_FRAMES
@@ -116,7 +118,7 @@ class Bullet2(QGraphicsPixmapItem):
 
     def game_update(self, keys_pressed, player2):
         if not self.active:
-            if Qt.Key_Control in keys_pressed:
+            if Qt.Key_Space in keys_pressed:
                 self.active = True;
                 self.setPos(player2.x() + self.offset_x, player2.y() + self.offset_y)
                 self.frames = BULLET_FRAMES
@@ -185,13 +187,6 @@ class Scene(QGraphicsScene):
         score.setRect(672, -1, 128, SCREEN_HEIGHT + 2)
         score.setBrush(QBrush(Qt.yellow))
         self.addItem(score)
-
-        self.slika = QGraphicsPixmapItem()
-        self.slika.setPixmap(QPixmap("playerShip1_red.png"))
-        self.slika.setPos(100, 100)
-        #self.slika.active = False
-        #self.slika.frames = 0
-        self.addItem(self.slika)
 
         self.view = QGraphicsView(self)
         self.view.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
