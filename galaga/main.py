@@ -32,18 +32,6 @@ class Enemy(QGraphicsPixmapItem):
         self.setPixmap(QPixmap("enemyRed2.png"))
         self.setPos(x, y)
 
-    """def enemy_update(self, levo, desno):
-        if desno > 0 and desno < 8:
-            desno += 1
-            if desno == 8:
-                desno = 0
-            self.setPos(self.x()+20, self.y())
-        elif levo > 0 and desno < 8:
-            levo += 1
-            if levo == 8:
-                levo = 0
-            self.setPos(self.x()-20, self.y())"""
-
     def move_left(self):
         self.setPos(self.x() - 20, self.y())
 
@@ -119,7 +107,7 @@ class Bullet2(QGraphicsPixmapItem):
     def game_update(self, keys_pressed, player2):
         if not self.active:
             if Qt.Key_Space in keys_pressed:
-                self.active = True;
+                self.active = True
                 self.setPos(player2.x() + self.offset_x, player2.y() + self.offset_y)
                 self.frames = BULLET_FRAMES
 
@@ -168,18 +156,14 @@ class Scene(QGraphicsScene):
         self.player1.setPos(20, 530)
         self.player2 = Player2()
         self.player2.setPos(589, 530)
-        self.bullets1 = [  #Bullet(PLAYER_BULLET_X_OFFSETS[0], PLAYER_BULLET_Y),
-            Bullet1(PLAYER_BULLET_X_OFFSETS[1], PLAYER_BULLET_Y)]
+        self.bullet1 = Bullet1(PLAYER_BULLET_X_OFFSETS[1], PLAYER_BULLET_Y)
+        self.bullet2 = Bullet2(PLAYER_BULLET_X_OFFSETS[1], PLAYER_BULLET_Y)
 
-        self.bullets2 = [  # Bullet(PLAYER_BULLET_X_OFFSETS[0], PLAYER_BULLET_Y),
-            Bullet2(PLAYER_BULLET_X_OFFSETS[1], PLAYER_BULLET_Y)
-        ]
-        for b in self.bullets1:
-            b.setPos(SCREEN_WIDTH, SCREEN_HEIGHT)
-            self.addItem(b)
-        for b in self.bullets2:
-            b.setPos(SCREEN_WIDTH, SCREEN_HEIGHT)
-            self.addItem(b)
+        self.bullet1.setPos(SCREEN_WIDTH, SCREEN_HEIGHT)
+        self.addItem(self.bullet1)
+
+        self.bullet2.setPos(SCREEN_WIDTH, SCREEN_HEIGHT)
+        self.addItem(self.bullet2)
         self.addItem(self.player1)
         self.addItem(self.player2)
 
@@ -208,10 +192,25 @@ class Scene(QGraphicsScene):
     def game_update(self):
         self.player1.game_update(self.keys_pressed)
         self.player2.game_update(self.keys_pressed)
-        for b in self.bullets1:
-            b.game_update(self.keys_pressed, self.player1)
-        for b in self.bullets2:
-            b.game_update(self.keys_pressed, self.player2)
+
+        for e in self.enemies:
+            if e.x() <= self.bullet1.x() <= e.x() + 32:
+                if e.y() <= self.bullet1.y() <= e.y() + 26:
+                    self.enemies.remove(e)
+                    self.removeItem(e)
+                    self.removeItem(self.bullet1)
+                    self.bullet1.setPos(SCREEN_WIDTH, SCREEN_HEIGHT)
+                    self.addItem(self.bullet1)
+            if e.x() <= self.bullet2.x() <= e.x() + 32:
+                if e.y() <= self.bullet2.y() <= e.y() + 26:
+                    self.enemies.remove(e)
+                    self.removeItem(e)
+                    self.removeItem(self.bullet2)
+                    self.bullet2.setPos(SCREEN_WIDTH, SCREEN_HEIGHT)
+                    self.addItem(self.bullet2)
+
+        self.bullet1.game_update(self.keys_pressed, self.player1)
+        self.bullet2.game_update(self.keys_pressed, self.player2)
 
     def game_update_enemy(self):
         if 0 < self.desno < 9:
@@ -228,9 +227,6 @@ class Scene(QGraphicsScene):
                 self.desno = 1
             for e in self.enemies:
                 e.move_left()
-
-
-
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
