@@ -5,25 +5,21 @@ from PyQt5.QtCore import (
     QTimer)
 from PyQt5.QtGui import (
     QBrush,
-    QPixmap
-)
-from PyQt5.QtWidgets import (
-    QApplication,  # Sama QT aplikacija
-    QGraphicsItem,  # Objekti ove klase mogu da se ubacuju u scenu, apstraktna,nasledjuje se
-    QGraphicsPixmapItem,  # Nasledjuje QGraphicsItem
-    QGraphicsRectItem,  # Nasledjuje QGraphicsItem
-    QGraphicsScene,  # U objekat scene ubacujemo sve iteme koje zelimo da iscrtamo
-    QGraphicsView  # Da bi nacrtali scenu treba nam objekat ove klase
-)
+    QPixmap,
+    QFont)
+from PyQt5.QtWidgets import *
+from random import randint
 
 SCREEN_WIDTH = 800
 SCREEN_HEIGHT = 600
 PLAYER_SPEED = 3  # pix/frame
 PLAYER_BULLET_X_OFFSETS = [0, 32]
-PLAYER_BULLET_Y = 15
+PLAYER_BULLET_Y = -20
 BULLET_SPEED = 10  # pix/frame
 BULLET_FRAMES = 55
 FRAME_TIME_MS = 16  # ms/frame
+ENEMY_BULLET_X_OFFSET = 14
+ENEMY_BULLET_Y_OFFSET = 26
 
 
 class Enemy(QGraphicsPixmapItem):
@@ -43,6 +39,7 @@ class Player1(QGraphicsPixmapItem):
     def __init__(self, parent=None):
         QGraphicsPixmapItem.__init__(self, parent)
         self.setPixmap(QPixmap("playerShip1_blue.png"))
+        self.lives = 3
 
     def game_update(self, keys_pressed):
         dx = 0
@@ -59,6 +56,7 @@ class Player2(QGraphicsPixmapItem):
     def __init__(self, parent=None):
         QGraphicsPixmapItem.__init__(self, parent)
         self.setPixmap(QPixmap("playerShip1_red.png"))
+        self.lives = 3
 
     def game_update(self, keys_pressed):
         dx = 0
@@ -119,6 +117,30 @@ class Bullet2(QGraphicsPixmapItem):
                 self.setPos(SCREEN_WIDTH, SCREEN_HEIGHT)
 
 
+class BulletEnemy(QGraphicsPixmapItem):
+    def __init__(self, offset_x, offset_y, parent=None):
+        QGraphicsPixmapItem.__init__(self, parent)
+        self.setPixmap(QPixmap("laserBlue07.png"))
+        self.offset_x = offset_x
+        self.offset_y = offset_y
+        self.active = False
+        self.frames = 0
+
+    def game_update(self, enemy):
+        if not self.active:
+            self.active = True
+            self.setPos(enemy.x() + self.offset_x, enemy.y() + self.offset_y)
+            self.frames = BULLET_FRAMES
+
+        else:
+            self.setPos(self.x(), self.y() + BULLET_SPEED)
+            self.frames -= 1
+            if self.frames <= 0:
+                self.active = False
+                self.setPos(SCREEN_WIDTH, SCREEN_HEIGHT)
+
+
+
 class Scene(QGraphicsScene):
     def __init__(self, parent=None):
         QGraphicsScene.__init__(self, parent)
@@ -133,6 +155,10 @@ class Scene(QGraphicsScene):
         self.timerEnemy = QTimer()
         self.timerEnemy.timeout.connect(self.game_update_enemy)
         self.timerEnemy.start(1000)
+
+        self.timerEnemyBullet = QTimer()
+        self.timerEnemyBullet.timeout.connect(self.random_enemy_bullet)
+        self.timerEnemyBullet.start(1000)
 
         bg = QGraphicsRectItem()
         bg.setRect(-1, -1, SCREEN_WIDTH + 2, SCREEN_HEIGHT + 2)
@@ -158,19 +184,26 @@ class Scene(QGraphicsScene):
         self.player2.setPos(589, 530)
         self.bullet1 = Bullet1(PLAYER_BULLET_X_OFFSETS[1], PLAYER_BULLET_Y)
         self.bullet2 = Bullet2(PLAYER_BULLET_X_OFFSETS[1], PLAYER_BULLET_Y)
+        self.bulletEnemy = BulletEnemy(ENEMY_BULLET_X_OFFSET, ENEMY_BULLET_Y_OFFSET)
+
+        self.randomEnemyIndex = randint(0, len(self.enemies))
 
         self.bullet1.setPos(SCREEN_WIDTH, SCREEN_HEIGHT)
         self.addItem(self.bullet1)
 
         self.bullet2.setPos(SCREEN_WIDTH, SCREEN_HEIGHT)
         self.addItem(self.bullet2)
+
+        self.bulletEnemy.setPos(SCREEN_WIDTH, SCREEN_HEIGHT)
+        self.addItem(self.bulletEnemy)
+
         self.addItem(self.player1)
         self.addItem(self.player2)
 
-        score = QGraphicsRectItem()
-        score.setRect(672, -1, 128, SCREEN_HEIGHT + 2)
-        score.setBrush(QBrush(Qt.yellow))
-        self.addItem(score)
+        self.scoreField = QGraphicsRectItem()
+        self.scoreField.setRect(672, -1, 128, SCREEN_HEIGHT + 2)
+        self.scoreField.setBrush(QBrush(Qt.yellow))
+        self.addItem(self.scoreField)
 
         self.view = QGraphicsView(self)
         self.view.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
@@ -196,14 +229,16 @@ class Scene(QGraphicsScene):
         for e in self.enemies:
             if e.x() <= self.bullet1.x() <= e.x() + 32:
                 if e.y() <= self.bullet1.y() <= e.y() + 26:
-                    self.enemies.remove(e)
+                    #self.enemies.remove(e)
+                    e.setPos(SCREEN_WIDTH, SCREEN_HEIGHT)
                     self.removeItem(e)
                     self.removeItem(self.bullet1)
                     self.bullet1.setPos(SCREEN_WIDTH, SCREEN_HEIGHT)
                     self.addItem(self.bullet1)
             if e.x() <= self.bullet2.x() <= e.x() + 32:
                 if e.y() <= self.bullet2.y() <= e.y() + 26:
-                    self.enemies.remove(e)
+                    #self.enemies.remove(e)
+                    e.setPos(SCREEN_WIDTH, SCREEN_HEIGHT)
                     self.removeItem(e)
                     self.removeItem(self.bullet2)
                     self.bullet2.setPos(SCREEN_WIDTH, SCREEN_HEIGHT)
@@ -211,6 +246,10 @@ class Scene(QGraphicsScene):
 
         self.bullet1.game_update(self.keys_pressed, self.player1)
         self.bullet2.game_update(self.keys_pressed, self.player2)
+        try:
+            self.bulletEnemy.game_update(self.enemies[self.randomEnemyIndex])
+        except:
+            print("exc")
 
     def game_update_enemy(self):
         if 0 < self.desno < 9:
@@ -227,6 +266,10 @@ class Scene(QGraphicsScene):
                 self.desno = 1
             for e in self.enemies:
                 e.move_left()
+
+    def random_enemy_bullet(self):
+        self.randomEnemyIndex = randint(0, len(self.enemies))
+
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
