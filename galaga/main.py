@@ -8,7 +8,7 @@ from PyQt5.QtGui import (
     QPixmap,
     QFont)
 from PyQt5.QtWidgets import *
-from random import randint
+from random import *
 
 SCREEN_WIDTH = 800
 SCREEN_HEIGHT = 600
@@ -80,7 +80,7 @@ class Bullet1(QGraphicsPixmapItem):
 
     def game_update(self, keys_pressed, player1):
         if not self.active:
-            if Qt.Key_0 in keys_pressed:
+            if Qt.Key_0 in keys_pressed and player1.lives > 0:
                 self.active = True
                 self.setPos(player1.x() + self.offset_x, player1.y() + self.offset_y)
                 self.frames = BULLET_FRAMES
@@ -104,7 +104,7 @@ class Bullet2(QGraphicsPixmapItem):
 
     def game_update(self, keys_pressed, player2):
         if not self.active:
-            if Qt.Key_Space in keys_pressed:
+            if Qt.Key_Space in keys_pressed and player2.lives > 0:
                 self.active = True
                 self.setPos(player2.x() + self.offset_x, player2.y() + self.offset_y)
                 self.frames = BULLET_FRAMES
@@ -155,10 +155,6 @@ class Scene(QGraphicsScene):
         self.timerEnemy = QTimer()
         self.timerEnemy.timeout.connect(self.game_update_enemy)
         self.timerEnemy.start(1000)
-
-        self.timerEnemyBullet = QTimer()
-        self.timerEnemyBullet.timeout.connect(self.random_enemy_bullet)
-        self.timerEnemyBullet.start(1000)
 
         bg = QGraphicsRectItem()
         bg.setRect(-1, -1, SCREEN_WIDTH + 2, SCREEN_HEIGHT + 2)
@@ -237,19 +233,48 @@ class Scene(QGraphicsScene):
                     self.addItem(self.bullet1)
             if e.x() <= self.bullet2.x() <= e.x() + 32:
                 if e.y() <= self.bullet2.y() <= e.y() + 26:
-                    #self.enemies.remove(e)
-                    e.setPos(SCREEN_WIDTH, SCREEN_HEIGHT)
+                    #e.setPos(SCREEN_WIDTH, SCREEN_HEIGHT)
                     self.removeItem(e)
+                    self.enemies.remove(e)
                     self.removeItem(self.bullet2)
                     self.bullet2.setPos(SCREEN_WIDTH, SCREEN_HEIGHT)
                     self.addItem(self.bullet2)
+
+        if self.player1.x()+69 >= self.bulletEnemy.x() >= self.player1.x():
+            if self.player1.y() + 53 >= self.bulletEnemy.y() >= self.player1.y():
+                if self.player1.lives > 0:
+                    self.bulletEnemy.active = False
+                    self.player1.lives -= 1
+                    self.player1.setPos(20, 530)
+                    print("player1 " + str(self.player1.lives))
+                    if self.player1.lives <= 0:
+                        self.removeItem(self.player1)
+
+        if self.player2.x()+69 >= self.bulletEnemy.x() >= self.player2.x():
+            if self.player2.y() + 53 >= self.bulletEnemy.y() >= self.player2.y():
+                if self.player2.lives > 0:
+                    self.bulletEnemy.active = False
+                    self.player2.lives -= 1
+                    self.player2.setPos(589, 530)
+                    print("player2 " + str(self.player2.lives))
+                    if self.player2.lives <= 0:
+                        self.removeItem(self.player2)
 
         self.bullet1.game_update(self.keys_pressed, self.player1)
         self.bullet2.game_update(self.keys_pressed, self.player2)
         try:
             self.bulletEnemy.game_update(self.enemies[self.randomEnemyIndex])
+            if self.bulletEnemy.active == False:
+                self.random_enemy_bullet()
         except:
+            self.random_enemy_bullet()
             print("exc")
+
+        if self.player1.lives == 0  and self.player2.lives == 0:
+            sys.exit(app.exec_())
+
+        if len(self.enemies) == 0:
+            self.__init__()
 
     def game_update_enemy(self):
         if 0 < self.desno < 9:
