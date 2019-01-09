@@ -15,11 +15,13 @@ SCREEN_HEIGHT = 600
 PLAYER_SPEED = 3  # pix/frame
 PLAYER_BULLET_X_OFFSETS = [0, 32]
 PLAYER_BULLET_Y = -20
-BULLET_SPEED = 10  # pix/frame
+BULLET_SPEED = 30  # pix/frame
 BULLET_FRAMES = 55
 FRAME_TIME_MS = 16  # ms/frame
 ENEMY_BULLET_X_OFFSET = 14
 ENEMY_BULLET_Y_OFFSET = 26
+ENEMY_BULLET_SPEED = 5
+ENEMY_BULLET_FRAMES = 700/ENEMY_BULLET_SPEED
 
 
 class Enemy(QGraphicsPixmapItem):
@@ -130,10 +132,10 @@ class BulletEnemy(QGraphicsPixmapItem):
         if not self.active:
             self.active = True
             self.setPos(enemy.x() + self.offset_x, enemy.y() + self.offset_y)
-            self.frames = BULLET_FRAMES
+            self.frames = ENEMY_BULLET_FRAMES
 
         else:
-            self.setPos(self.x(), self.y() + BULLET_SPEED)
+            self.setPos(self.x(), self.y() + ENEMY_BULLET_SPEED)
             self.frames -= 1
             if self.frames <= 0:
                 self.active = False
@@ -161,8 +163,8 @@ class Scene(QGraphicsScene):
         bg.setBrush(QBrush(Qt.black))
         self.addItem(bg)
 
-        self.levo = 1
-        self.desno = 5
+        self.left = 1
+        self.right = 5
 
         self.enemies = [Enemy(131, 10), Enemy(173, 10), Enemy(215, 10), Enemy(257, 10), Enemy(299, 10), Enemy(341, 10),
                         Enemy(383, 10), Enemy(425, 10), Enemy(467, 10), Enemy(509, 10),
@@ -274,27 +276,61 @@ class Scene(QGraphicsScene):
             sys.exit(app.exec_())
 
         if len(self.enemies) == 0:
-            self.__init__()
+            self.new_level()
 
     def game_update_enemy(self):
-        if 0 < self.desno < 9:
-            self.desno += 1
-            if self.desno == 9:
-                self.desno = 0
-                self.levo = 1
+        if 0 < self.right < 9:
+            self.right += 1
+            if self.right == 9:
+                self.right = 0
+                self.left = 1
             for e in self.enemies:
                 e.move_right()
-        elif 0 < self.levo < 9:
-            self.levo += 1
-            if self.levo == 9:
-                self.levo = 0
-                self.desno = 1
+        elif 0 < self.left < 9:
+            self.left += 1
+            if self.left == 9:
+                self.left = 0
+                self.right = 1
             for e in self.enemies:
                 e.move_left()
 
     def random_enemy_bullet(self):
         self.randomEnemyIndex = randint(0, len(self.enemies))
 
+    def new_level(self):
+        self.ENEMY_BULLET_SPEED += 10
+
+        self.left = 1
+        self.right = 5
+
+        self.enemies = [Enemy(131, 10), Enemy(173, 10), Enemy(215, 10), Enemy(257, 10), Enemy(299, 10), Enemy(341, 10),
+                        Enemy(383, 10), Enemy(425, 10), Enemy(467, 10), Enemy(509, 10),
+                        Enemy(131, 50), Enemy(173, 50), Enemy(215, 50), Enemy(257, 50), Enemy(299, 50), Enemy(341, 50),
+                        Enemy(383, 50), Enemy(425, 50), Enemy(467, 50), Enemy(509, 50),
+                        Enemy(131, 90), Enemy(173, 90), Enemy(215, 90), Enemy(257, 90), Enemy(299, 90), Enemy(341, 90),
+                        Enemy(383, 90), Enemy(425, 90), Enemy(467, 90), Enemy(509, 90)]
+
+        for e in self.enemies:
+            self.addItem(e)
+
+        if self.player1.lives > 0:
+            self.player1 = Player1()
+            self.player1.setPos(20, 530)
+            self.bullet1 = Bullet1(PLAYER_BULLET_X_OFFSETS[1], PLAYER_BULLET_Y)
+            self.bullet1.setPos(SCREEN_WIDTH, SCREEN_HEIGHT)
+            self.addItem(self.bullet1)
+            self.addItem(self.player1)
+        if self.player2.lives > 0:
+            self.player2 = Player2()
+            self.player2.setPos(589, 530)
+            self.bullet2 = Bullet2(PLAYER_BULLET_X_OFFSETS[1], PLAYER_BULLET_Y)
+            self.bullet2.setPos(SCREEN_WIDTH, SCREEN_HEIGHT)
+            self.addItem(self.bullet2)
+            self.addItem(self.player2)
+
+        self.bulletEnemy = BulletEnemy(ENEMY_BULLET_X_OFFSET, ENEMY_BULLET_Y_OFFSET)
+        self.bulletEnemy.setPos(SCREEN_WIDTH, SCREEN_HEIGHT)
+        self.addItem(self.bulletEnemy)
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
