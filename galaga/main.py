@@ -15,7 +15,7 @@ SCREEN_HEIGHT = 600
 PLAYER_SPEED = 3  # pix/frame
 PLAYER_BULLET_X_OFFSETS = [0, 32]
 PLAYER_BULLET_Y = -20
-BULLET_SPEED = 30  # pix/frame
+BULLET_SPEED = 10  # pix/frame
 BULLET_FRAMES = 55
 FRAME_TIME_MS = 16  # ms/frame
 ENEMY_BULLET_X_OFFSET = 14
@@ -142,7 +142,6 @@ class BulletEnemy(QGraphicsPixmapItem):
                 self.setPos(SCREEN_WIDTH, SCREEN_HEIGHT)
 
 
-
 class Scene(QGraphicsScene):
     def __init__(self, parent=None):
         QGraphicsScene.__init__(self, parent)
@@ -227,15 +226,15 @@ class Scene(QGraphicsScene):
         for e in self.enemies:
             if e.x() <= self.bullet1.x() <= e.x() + 32:
                 if e.y() <= self.bullet1.y() <= e.y() + 26:
-                    #self.enemies.remove(e)
-                    e.setPos(SCREEN_WIDTH, SCREEN_HEIGHT)
+                    self.enemies.remove(e)
+                    # e.setPos(SCREEN_WIDTH, SCREEN_HEIGHT)
                     self.removeItem(e)
                     self.removeItem(self.bullet1)
                     self.bullet1.setPos(SCREEN_WIDTH, SCREEN_HEIGHT)
                     self.addItem(self.bullet1)
             if e.x() <= self.bullet2.x() <= e.x() + 32:
                 if e.y() <= self.bullet2.y() <= e.y() + 26:
-                    #e.setPos(SCREEN_WIDTH, SCREEN_HEIGHT)
+                    # e.setPos(SCREEN_WIDTH, SCREEN_HEIGHT)
                     self.removeItem(e)
                     self.enemies.remove(e)
                     self.removeItem(self.bullet2)
@@ -266,16 +265,25 @@ class Scene(QGraphicsScene):
         self.bullet2.game_update(self.keys_pressed, self.player2)
         try:
             self.bulletEnemy.game_update(self.enemies[self.randomEnemyIndex])
-            if self.bulletEnemy.active == False:
+            if not self.bulletEnemy.active:
                 self.random_enemy_bullet()
         except:
             self.random_enemy_bullet()
             print("exc")
 
-        if self.player1.lives == 0  and self.player2.lives == 0:
+        if self.player1.lives == 0 and self.player2.lives == 0:
             sys.exit(app.exec_())
 
         if len(self.enemies) == 0:
+            self.timer.stop()
+            self.timerEnemy.stop()
+            if self.player1.lives > 0:
+                self.removeItem(self.player1)
+                self.removeItem(self.bullet1)
+            if self.player2.lives > 0:
+                self.removeItem(self.player2)
+                self.removeItem(self.bullet2)
+            self.removeItem(self.bulletEnemy)
             self.new_level()
 
     def game_update_enemy(self):
@@ -298,7 +306,11 @@ class Scene(QGraphicsScene):
         self.randomEnemyIndex = randint(0, len(self.enemies))
 
     def new_level(self):
-        self.ENEMY_BULLET_SPEED += 10
+        self.timer.start(FRAME_TIME_MS, self)
+        self.timerEnemy.start(1000)
+
+        global ENEMY_BULLET_SPEED
+        ENEMY_BULLET_SPEED += 2
 
         self.left = 1
         self.right = 5
@@ -331,6 +343,7 @@ class Scene(QGraphicsScene):
         self.bulletEnemy = BulletEnemy(ENEMY_BULLET_X_OFFSET, ENEMY_BULLET_Y_OFFSET)
         self.bulletEnemy.setPos(SCREEN_WIDTH, SCREEN_HEIGHT)
         self.addItem(self.bulletEnemy)
+
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
