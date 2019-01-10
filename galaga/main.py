@@ -162,6 +162,20 @@ class BulletEnemy(QGraphicsPixmapItem):
                 self.setPos(SCREEN_WIDTH, SCREEN_HEIGHT)
 
 
+class LifePlayer1(QGraphicsPixmapItem):
+    def __init__(self, x, y, parent=None):
+        QGraphicsPixmapItem.__init__(self, parent)
+        self.setPixmap(QPixmap("playerLife1_blue.png"))
+        self.setPos(x, y)
+
+
+class LifePlayer2(QGraphicsPixmapItem):
+    def __init__(self, x, y, parent=None):
+        QGraphicsPixmapItem.__init__(self, parent)
+        self.setPixmap(QPixmap("playerLife2_red.png"))
+        self.setPos(x, y)
+
+
 class Scene(QGraphicsScene):
     def __init__(self, parent=None):
         QGraphicsScene.__init__(self, parent)
@@ -219,8 +233,60 @@ class Scene(QGraphicsScene):
 
         self.scoreField = QGraphicsRectItem()
         self.scoreField.setRect(672, -1, 128, SCREEN_HEIGHT + 2)
-        self.scoreField.setBrush(QBrush(Qt.yellow))
+        self.scoreField.setBrush(QBrush(Qt.darkGray))
         self.addItem(self.scoreField)
+
+        self.level = 1
+
+        self.levelField = QGraphicsSimpleTextItem("Level: " + str(self.level))
+        self.levelField.setBrush(QBrush(Qt.green))
+        self.levelField.setPos(677, 20)
+        self.addItem(self.levelField)
+
+        self.levelFont = QFont()
+        self.levelFont.setPixelSize(30)
+        self.levelFont.setBold(1)
+        self.levelField.setFont(self.levelFont)
+
+        self.playerFont = QFont()
+        self.playerFont.setPixelSize(25)
+        self.playerFont.setBold(1)
+
+        self.scoreFont = QFont()
+        self.scoreFont.setPixelSize(20)
+        self.scoreFont.setBold(1)
+
+        self.playerLives = QGraphicsSimpleTextItem("Player 1: ")
+        self.playerLives.setBrush(QBrush(Qt.blue))
+        self.playerLives.setPos(674, 130)
+        self.playerLives.setFont(self.playerFont)
+        self.addItem(self.playerLives)
+
+        self.livesPlayer1 = [LifePlayer1(680, 175), LifePlayer1(720, 175), LifePlayer1(760, 175)]
+        for l in self.livesPlayer1:
+            self.addItem(l)
+
+        self.playerLives = QGraphicsSimpleTextItem("Score: ")
+        self.playerLives.setBrush(QBrush(Qt.blue))
+        self.playerLives.setPos(674, 220)
+        self.playerLives.setFont(self.scoreFont)
+        self.addItem(self.playerLives)
+
+        self.playerLives = QGraphicsSimpleTextItem("Player 2: ")
+        self.playerLives.setBrush(QBrush(Qt.blue))
+        self.playerLives.setPos(674, 330)
+        self.playerLives.setFont(self.playerFont)
+        self.addItem(self.playerLives)
+
+        self.livesPlayer2 = [LifePlayer2(680, 375), LifePlayer2(720, 375), LifePlayer2(760, 375)]
+        for l in self.livesPlayer2:
+            self.addItem(l)
+
+        self.playerLives = QGraphicsSimpleTextItem("Score: ")
+        self.playerLives.setBrush(QBrush(Qt.blue))
+        self.playerLives.setPos(674, 420)
+        self.playerLives.setFont(self.scoreFont)
+        self.addItem(self.playerLives)
 
         self.view = QGraphicsView(self)
         self.view.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
@@ -321,7 +387,7 @@ class Scene(QGraphicsScene):
             self.random_enemy_bullet()
             print("excPucanj")
         try:
-            if randint(0, 100) == 0:
+            if randint(0, 500) == 0:
                 self.enemies[randint(0, len(self.enemies))].chosen = True
         except:
             print("excPadanje")
@@ -363,6 +429,14 @@ class Scene(QGraphicsScene):
     def new_level(self):
         self.timer.start(FRAME_TIME_MS, self)
         self.timerEnemy.start(1000)
+
+        self.level += 1
+        self.removeItem(self.levelField)
+        self.levelField = QGraphicsSimpleTextItem("Level: " + str(self.level))
+        self.levelField.setBrush(QBrush(Qt.green))
+        self.levelField.setPos(677, 20)
+        self.levelField.setFont(self.levelFont)
+        self.addItem(self.levelField)
 
         global ENEMY_BULLET_SPEED
         ENEMY_BULLET_SPEED += 2
