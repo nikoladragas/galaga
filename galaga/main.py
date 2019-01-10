@@ -22,6 +22,8 @@ ENEMY_BULLET_X_OFFSET = 14
 ENEMY_BULLET_Y_OFFSET = 26
 ENEMY_BULLET_SPEED = 5
 ENEMY_BULLET_FRAMES = 700/ENEMY_BULLET_SPEED
+ENEMY_COLLAPSE_SPEED = 2
+ENEMY_COLLAPSE_FRAMES = 700/ENEMY_COLLAPSE_SPEED
 
 
 class Enemy(QGraphicsPixmapItem):
@@ -29,12 +31,29 @@ class Enemy(QGraphicsPixmapItem):
         QGraphicsPixmapItem.__init__(self, parent)
         self.setPixmap(QPixmap("enemyRed2.png"))
         self.setPos(x, y)
+        self.active = False
+        self.frames = 0
+        self.chosen = False
 
     def move_left(self):
-        self.setPos(self.x() - 20, self.y())
+        if self.active == False:
+            self.setPos(self.x() - 20, self.y())
 
     def move_right(self):
-        self.setPos(self.x() + 20, self.y())
+        if self.active == False:
+            self.setPos(self.x() + 20, self.y())
+
+    def collapse(self):
+        if not self.active:
+            self.active = True
+            self.frames = ENEMY_COLLAPSE_FRAMES
+
+        else:
+            self.setPos(self.x(), self.y() + ENEMY_COLLAPSE_SPEED)
+            self.frames -= 1
+            if self.frames <= 0:
+                self.frames = -1
+                self.active = False
 
 
 class Player1(QGraphicsPixmapItem):
@@ -115,6 +134,7 @@ class Bullet2(QGraphicsPixmapItem):
             self.setPos(self.x(), self.y() - BULLET_SPEED)
             self.frames -= 1
             if self.frames <= 0:
+                self.frames = -1
                 self.active = False
                 self.setPos(SCREEN_WIDTH, SCREEN_HEIGHT)
 
@@ -224,22 +244,50 @@ class Scene(QGraphicsScene):
         self.player2.game_update(self.keys_pressed)
 
         for e in self.enemies:
+            if e.frames == -1:
+                self.removeItem(e)
+                self.enemies.remove(e)
+                continue
+            if e.chosen == True:
+                print("Enemy x" + str(e.x()))
+                print("Player 1 x" + str(self.player1.x()))
+                e.collapse()
+
             if e.x() <= self.bullet1.x() <= e.x() + 32:
                 if e.y() <= self.bullet1.y() <= e.y() + 26:
-                    self.enemies.remove(e)
-                    # e.setPos(SCREEN_WIDTH, SCREEN_HEIGHT)
+                    print(str(e.x()) + " " + str(e.y()))
+                    print(str(self.bullet1.x()) + " " + str(self.bullet1.y()))
                     self.removeItem(e)
+                    self.enemies.remove(e)
                     self.removeItem(self.bullet1)
                     self.bullet1.setPos(SCREEN_WIDTH, SCREEN_HEIGHT)
                     self.addItem(self.bullet1)
             if e.x() <= self.bullet2.x() <= e.x() + 32:
                 if e.y() <= self.bullet2.y() <= e.y() + 26:
-                    # e.setPos(SCREEN_WIDTH, SCREEN_HEIGHT)
                     self.removeItem(e)
                     self.enemies.remove(e)
                     self.removeItem(self.bullet2)
                     self.bullet2.setPos(SCREEN_WIDTH, SCREEN_HEIGHT)
                     self.addItem(self.bullet2)
+
+            if self.player1.y() <= e.y() + 26 <= self.player1.y() + 53:
+                if self.player1.x() <= e.x() <= self.player1.x() + 69 or self.player1.x() <= e.x() +32 <= self.player1.x() + 69:
+                    if self.player1.lives > 0:
+                        e.frames = -1
+                        self.player1.lives -= 1
+                        self.player1.setPos(20, 530)
+                        print("player1 " + str(self.player1.lives))
+                        if self.player1.lives <= 0:
+                            self.removeItem(self.player1)
+            if self.player2.y() <= e.y() + 26 <= self.player2.y() + 53:
+                if self.player2.x() <= e.x() <= self.player2.x() + 69 or self.player2.x() <= e.x() + 32 <= self.player2.x() + 69:
+                    if self.player2.lives > 0:
+                        e.frames = -1
+                        self.player2.lives -= 1
+                        self.player2.setPos(589, 530)
+                        print("player2 " + str(self.player2.lives))
+                        if self.player2.lives <= 0:
+                            self.removeItem(self.player2)
 
         if self.player1.x()+69 >= self.bulletEnemy.x() >= self.player1.x():
             if self.player1.y() + 53 >= self.bulletEnemy.y() >= self.player1.y():
@@ -261,6 +309,8 @@ class Scene(QGraphicsScene):
                     if self.player2.lives <= 0:
                         self.removeItem(self.player2)
 
+
+
         self.bullet1.game_update(self.keys_pressed, self.player1)
         self.bullet2.game_update(self.keys_pressed, self.player2)
         try:
@@ -269,7 +319,12 @@ class Scene(QGraphicsScene):
                 self.random_enemy_bullet()
         except:
             self.random_enemy_bullet()
-            print("exc")
+            print("excPucanj")
+        try:
+            if randint(0, 100) == 0:
+                self.enemies[randint(0, len(self.enemies))].chosen = True
+        except:
+            print("excPadanje")
 
         if self.player1.lives == 0 and self.player2.lives == 0:
             sys.exit(app.exec_())
