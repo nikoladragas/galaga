@@ -326,14 +326,12 @@ class Scene(QGraphicsScene):
             self.addItem(e)
 
         if self.player1.lives > 0:
-            self.player1 = Player1()
             self.player1.setPos(20, 530)
             self.bullet1 = Bullet1(PLAYER_BULLET_X_OFFSETS[1], PLAYER_BULLET_Y)
             self.bullet1.setPos(SCREEN_WIDTH, SCREEN_HEIGHT)
             self.addItem(self.bullet1)
             self.addItem(self.player1)
         if self.player2.lives > 0:
-            self.player2 = Player2()
             self.player2.setPos(589, 530)
             self.bullet2 = Bullet2(PLAYER_BULLET_X_OFFSETS[1], PLAYER_BULLET_Y)
             self.bullet2.setPos(SCREEN_WIDTH, SCREEN_HEIGHT)
