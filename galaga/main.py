@@ -1,4 +1,6 @@
 import sys
+
+import multiprocessing
 from PyQt5.QtCore import (
     Qt,
     QBasicTimer,
@@ -8,11 +10,14 @@ from PyQt5.QtGui import (
     QPixmap,
     QFont)
 from PyQt5.QtWidgets import *
+import random
 from random import *
+from multiprocessing import *
 
 SCREEN_WIDTH = 800
 SCREEN_HEIGHT = 600
-PLAYER_SPEED = 3  # pix/frame
+PLAYER1_SPEED = 4   # pix/frame
+PLAYER2_SPEED = 4
 PLAYER_BULLET_X_OFFSETS = [0, 32]
 PLAYER_BULLET_Y = -20
 BULLET_SPEED = 10  # pix/frame
@@ -65,11 +70,11 @@ class Player1(QGraphicsPixmapItem):
     def game_update(self, keys_pressed):
         dx = 0
         if Qt.Key_Left in keys_pressed:
-            if self.x() > 0:
-                dx -= PLAYER_SPEED
+            if self.x() > 15:
+                dx -= PLAYER1_SPEED
         if Qt.Key_Right in keys_pressed:
-            if self.x() < 604:
-                dx += PLAYER_SPEED
+            if self.x() < 590:
+                dx += PLAYER1_SPEED
         self.setPos(self.x() + dx, self.y())
 
 
@@ -82,11 +87,11 @@ class Player2(QGraphicsPixmapItem):
     def game_update(self, keys_pressed):
         dx = 0
         if Qt.Key_A in keys_pressed:
-            if self.x() > 0:
-                dx -= PLAYER_SPEED
+            if self.x() > 15:
+                dx -= PLAYER2_SPEED
         if Qt.Key_D in keys_pressed:
-            if self.x() < 604:
-                dx += PLAYER_SPEED
+            if self.x() < 590:
+                dx += PLAYER2_SPEED
         self.setPos(self.x() + dx, self.y())
 
 
@@ -165,14 +170,14 @@ class BulletEnemy(QGraphicsPixmapItem):
 class LifePlayer1(QGraphicsPixmapItem):
     def __init__(self, x, y, parent=None):
         QGraphicsPixmapItem.__init__(self, parent)
-        self.setPixmap(QPixmap("playerLife1_blue.png"))
+        self.setPixmap(QPixmap("playerLife_blue.png"))
         self.setPos(x, y)
 
 
 class LifePlayer2(QGraphicsPixmapItem):
     def __init__(self, x, y, parent=None):
         QGraphicsPixmapItem.__init__(self, parent)
-        self.setPixmap(QPixmap("playerLife2_red.png"))
+        self.setPixmap(QPixmap("playerLife_red.png"))
         self.setPos(x, y)
 
 
@@ -238,15 +243,14 @@ class Scene(QGraphicsScene):
 
         self.level = 1
 
+        self.levelFont = QFont()
+        self.levelFont.setPixelSize(25)
+        self.levelFont.setBold(1)
         self.levelField = QGraphicsSimpleTextItem("Level: " + str(self.level))
         self.levelField.setBrush(QBrush(Qt.green))
         self.levelField.setPos(677, 20)
-        self.addItem(self.levelField)
-
-        self.levelFont = QFont()
-        self.levelFont.setPixelSize(30)
-        self.levelFont.setBold(1)
         self.levelField.setFont(self.levelFont)
+        self.addItem(self.levelField)
 
         self.playerFont = QFont()
         self.playerFont.setPixelSize(25)
@@ -256,37 +260,39 @@ class Scene(QGraphicsScene):
         self.scoreFont.setPixelSize(20)
         self.scoreFont.setBold(1)
 
-        self.playerLives = QGraphicsSimpleTextItem("Player 1: ")
-        self.playerLives.setBrush(QBrush(Qt.blue))
-        self.playerLives.setPos(674, 130)
-        self.playerLives.setFont(self.playerFont)
-        self.addItem(self.playerLives)
+        self.player1Lives = QGraphicsSimpleTextItem("Player 1: ")
+        self.player1Lives.setBrush(QBrush(Qt.blue))
+        self.player1Lives.setPos(674, 130)
+        self.player1Lives.setFont(self.playerFont)
+        self.addItem(self.player1Lives)
 
         self.livesPlayer1 = [LifePlayer1(680, 175), LifePlayer1(720, 175), LifePlayer1(760, 175)]
         for l in self.livesPlayer1:
             self.addItem(l)
 
-        self.playerLives = QGraphicsSimpleTextItem("Score: ")
-        self.playerLives.setBrush(QBrush(Qt.blue))
-        self.playerLives.setPos(674, 220)
-        self.playerLives.setFont(self.scoreFont)
-        self.addItem(self.playerLives)
+        self.player1Score = 0
+        self.player1Scores = QGraphicsSimpleTextItem("Score: \n" + str(self.player1Score))
+        self.player1Scores.setBrush(QBrush(Qt.blue))
+        self.player1Scores.setPos(674, 220)
+        self.player1Scores.setFont(self.scoreFont)
+        self.addItem(self.player1Scores)
 
-        self.playerLives = QGraphicsSimpleTextItem("Player 2: ")
-        self.playerLives.setBrush(QBrush(Qt.blue))
-        self.playerLives.setPos(674, 330)
-        self.playerLives.setFont(self.playerFont)
-        self.addItem(self.playerLives)
+        self.player2Lives = QGraphicsSimpleTextItem("Player 2: ")
+        self.player2Lives.setBrush(QBrush(Qt.blue))
+        self.player2Lives.setPos(674, 330)
+        self.player2Lives.setFont(self.playerFont)
+        self.addItem(self.player2Lives)
 
         self.livesPlayer2 = [LifePlayer2(680, 375), LifePlayer2(720, 375), LifePlayer2(760, 375)]
         for l in self.livesPlayer2:
             self.addItem(l)
 
-        self.playerLives = QGraphicsSimpleTextItem("Score: ")
-        self.playerLives.setBrush(QBrush(Qt.blue))
-        self.playerLives.setPos(674, 420)
-        self.playerLives.setFont(self.scoreFont)
-        self.addItem(self.playerLives)
+        self.player2Score = 0
+        self.player2Scores = QGraphicsSimpleTextItem("Score: \n" + str(self.player2Score))
+        self.player2Scores.setBrush(QBrush(Qt.blue))
+        self.player2Scores.setPos(674, 420)
+        self.player2Scores.setFont(self.scoreFont)
+        self.addItem(self.player2Scores)
 
         self.view = QGraphicsView(self)
         self.view.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
@@ -315,19 +321,17 @@ class Scene(QGraphicsScene):
                 self.enemies.remove(e)
                 continue
             if e.chosen == True:
-                print("Enemy x" + str(e.x()))
-                print("Player 1 x" + str(self.player1.x()))
                 e.collapse()
 
             if e.x() <= self.bullet1.x() <= e.x() + 32:
                 if e.y() <= self.bullet1.y() <= e.y() + 26:
-                    print(str(e.x()) + " " + str(e.y()))
-                    print(str(self.bullet1.x()) + " " + str(self.bullet1.y()))
                     self.removeItem(e)
                     self.enemies.remove(e)
                     self.removeItem(self.bullet1)
                     self.bullet1.setPos(SCREEN_WIDTH, SCREEN_HEIGHT)
                     self.addItem(self.bullet1)
+                    self.player1Score += 10
+                    self.player1Scores.setText("Score: \n" + str(self.player1Score))
             if e.x() <= self.bullet2.x() <= e.x() + 32:
                 if e.y() <= self.bullet2.y() <= e.y() + 26:
                     self.removeItem(e)
@@ -335,14 +339,17 @@ class Scene(QGraphicsScene):
                     self.removeItem(self.bullet2)
                     self.bullet2.setPos(SCREEN_WIDTH, SCREEN_HEIGHT)
                     self.addItem(self.bullet2)
+                    self.player2Score += 10
+                    self.player2Scores.setText("Score: \n" + str(self.player2Score))
 
             if self.player1.y() <= e.y() + 26 <= self.player1.y() + 53:
                 if self.player1.x() <= e.x() <= self.player1.x() + 69 or self.player1.x() <= e.x() +32 <= self.player1.x() + 69:
                     if self.player1.lives > 0:
                         e.frames = -1
                         self.player1.lives -= 1
+                        self.removeItem(self.livesPlayer1[-1])
+                        self.livesPlayer1.remove(self.livesPlayer1[-1])
                         self.player1.setPos(20, 530)
-                        print("player1 " + str(self.player1.lives))
                         if self.player1.lives <= 0:
                             self.removeItem(self.player1)
             if self.player2.y() <= e.y() + 26 <= self.player2.y() + 53:
@@ -350,8 +357,9 @@ class Scene(QGraphicsScene):
                     if self.player2.lives > 0:
                         e.frames = -1
                         self.player2.lives -= 1
+                        self.removeItem(self.livesPlayer2[-1])
+                        self.livesPlayer2.remove(self.livesPlayer2[-1])
                         self.player2.setPos(589, 530)
-                        print("player2 " + str(self.player2.lives))
                         if self.player2.lives <= 0:
                             self.removeItem(self.player2)
 
@@ -360,8 +368,9 @@ class Scene(QGraphicsScene):
                 if self.player1.lives > 0:
                     self.bulletEnemy.active = False
                     self.player1.lives -= 1
+                    self.removeItem(self.livesPlayer1[-1])
+                    self.livesPlayer1.remove(self.livesPlayer1[-1])
                     self.player1.setPos(20, 530)
-                    print("player1 " + str(self.player1.lives))
                     if self.player1.lives <= 0:
                         self.removeItem(self.player1)
 
@@ -370,8 +379,9 @@ class Scene(QGraphicsScene):
                 if self.player2.lives > 0:
                     self.bulletEnemy.active = False
                     self.player2.lives -= 1
+                    self.removeItem(self.livesPlayer2[-1])
+                    self.livesPlayer2.remove(self.livesPlayer2[-1])
                     self.player2.setPos(589, 530)
-                    print("player2 " + str(self.player2.lives))
                     if self.player2.lives <= 0:
                         self.removeItem(self.player2)
 
@@ -385,13 +395,11 @@ class Scene(QGraphicsScene):
                 self.random_enemy_bullet()
         except:
             self.random_enemy_bullet()
-            print("excPucanj")
         try:
             if randint(0, 500) == 0:
                 self.enemies[randint(0, len(self.enemies))].chosen = True
         except:
-            print("excPadanje")
-
+            pass
         if self.player1.lives == 0 and self.player2.lives == 0:
             sys.exit(app.exec_())
 
@@ -431,15 +439,17 @@ class Scene(QGraphicsScene):
         self.timerEnemy.start(1000)
 
         self.level += 1
-        self.removeItem(self.levelField)
-        self.levelField = QGraphicsSimpleTextItem("Level: " + str(self.level))
-        self.levelField.setBrush(QBrush(Qt.green))
-        self.levelField.setPos(677, 20)
-        self.levelField.setFont(self.levelFont)
-        self.addItem(self.levelField)
+        self.levelField.setText("Level: " + str(self.level))
 
         global ENEMY_BULLET_SPEED
         ENEMY_BULLET_SPEED += 2
+        global ENEMY_BULLET_FRAMES
+        ENEMY_BULLET_FRAMES = 700/ENEMY_BULLET_SPEED
+
+        global ENEMY_COLLAPSE_SPEED
+        ENEMY_COLLAPSE_SPEED += 2
+        global ENEMY_COLLAPSE_FRAMES
+        ENEMY_COLLAPSE_FRAMES = 700/ENEMY_COLLAPSE_SPEED
 
         self.left = 1
         self.right = 5
@@ -471,8 +481,24 @@ class Scene(QGraphicsScene):
         self.bulletEnemy.setPos(SCREEN_WIDTH, SCREEN_HEIGHT)
         self.addItem(self.bulletEnemy)
 
+def get_enemy_power_ups(numOfEnemies, numOfPowerUps):
+    r = []
+    while len(r) != numOfPowerUps:
+        temp = randint(0, numOfEnemies)
+        if r.__contains__(temp):
+            continue
+        else:
+            r.append(temp)
+    return r
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
+
+    pool = multiprocessing.Pool(processes=1)
+    result = pool.apply_async(get_enemy_power_ups, (30, 5))
+    rezultat = result.get(timeout=1)
+    print(type(rezultat))
+    print(str(rezultat))
+
     scene = Scene()
     sys.exit(app.exec_())
