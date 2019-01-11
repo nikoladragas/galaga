@@ -39,6 +39,7 @@ class Enemy(QGraphicsPixmapItem):
         self.active = False
         self.frames = 0
         self.chosen = False
+        self.powerUp = False
 
     def move_left(self):
         if self.active == False:
@@ -211,6 +212,14 @@ class Scene(QGraphicsScene):
                         Enemy(131, 90), Enemy(173, 90), Enemy(215, 90), Enemy(257, 90), Enemy(299, 90), Enemy(341, 90),
                         Enemy(383, 90), Enemy(425, 90), Enemy(467, 90), Enemy(509, 90)]
 
+        pool = multiprocessing.Pool(processes=1)
+        result = pool.apply_async(get_enemy_power_ups, (29, 5))
+        self.enemyPowerUps = result.get(timeout=1)
+
+        for i in self.enemyPowerUps:
+            self.enemies[i].setPixmap(QPixmap("enemyGreen2.png"))
+            self.enemies[i].powerUp = True
+
         for e in self.enemies:
             self.addItem(e)
 
@@ -325,6 +334,29 @@ class Scene(QGraphicsScene):
 
             if e.x() <= self.bullet1.x() <= e.x() + 32:
                 if e.y() <= self.bullet1.y() <= e.y() + 26:
+                    if e.powerUp:
+                        temp = randint(0, 3)
+                        global PLAYER1_SPEED
+                        if temp == 0:
+                            PLAYER1_SPEED = 8
+                        elif temp == 1:
+                            PLAYER1_SPEED = 2
+                        elif temp == 2:
+                            if self.player1.lives == 3:
+                                pass
+                            elif self.player1.lives == 2:
+                                self.livesPlayer1.append(LifePlayer1(760, 175))
+                                self.player1.lives += 1
+                                self.addItem(self.livesPlayer1[-1])
+                            elif self.player1.lives == 1:
+                                self.livesPlayer1.append(LifePlayer1(720, 175))
+                                self.player1.lives += 1
+                                self.addItem((self.livesPlayer1[-1]))
+                            else:
+                                pass
+                        else:
+                            self.player1Score += 100
+                            self.player1Scores.setText("Score: \n" + str(self.player1Score))
                     self.removeItem(e)
                     self.enemies.remove(e)
                     self.removeItem(self.bullet1)
@@ -334,6 +366,29 @@ class Scene(QGraphicsScene):
                     self.player1Scores.setText("Score: \n" + str(self.player1Score))
             if e.x() <= self.bullet2.x() <= e.x() + 32:
                 if e.y() <= self.bullet2.y() <= e.y() + 26:
+                    if e.powerUp:
+                        temp = randint(0, 3)
+                        global PLAYER2_SPEED
+                        if temp == 0:
+                            PLAYER2_SPEED = 8
+                        elif temp == 1:
+                            PLAYER2_SPEED = 2
+                        elif temp == 2:
+                            if self.player2.lives == 3:
+                                pass
+                            elif self.player2.lives == 2:
+                                self.livesPlayer2.append(LifePlayer2(760, 375))
+                                self.player2.lives += 1
+                                self.addItem(self.livesPlayer2[-1])
+                            elif self.player2.lives == 1:
+                                self.livesPlayer2.append(LifePlayer2(720, 375))
+                                self.player2.lives += 1
+                                self.addItem((self.livesPlayer2[-1]))
+                            else:
+                                pass
+                        else:
+                            self.player2Score += 100
+                            self.player2Scores.setText("Score: \n" + str(self.player2Score))
                     self.removeItem(e)
                     self.enemies.remove(e)
                     self.removeItem(self.bullet2)
@@ -345,6 +400,7 @@ class Scene(QGraphicsScene):
             if self.player1.y() <= e.y() + 26 <= self.player1.y() + 53:
                 if self.player1.x() <= e.x() <= self.player1.x() + 69 or self.player1.x() <= e.x() +32 <= self.player1.x() + 69:
                     if self.player1.lives > 0:
+                        PLAYER1_SPEED = 4
                         e.frames = -1
                         self.player1.lives -= 1
                         self.removeItem(self.livesPlayer1[-1])
@@ -355,6 +411,7 @@ class Scene(QGraphicsScene):
             if self.player2.y() <= e.y() + 26 <= self.player2.y() + 53:
                 if self.player2.x() <= e.x() <= self.player2.x() + 69 or self.player2.x() <= e.x() + 32 <= self.player2.x() + 69:
                     if self.player2.lives > 0:
+                        PLAYER2_SPEED = 4
                         e.frames = -1
                         self.player2.lives -= 1
                         self.removeItem(self.livesPlayer2[-1])
@@ -366,6 +423,7 @@ class Scene(QGraphicsScene):
         if self.player1.x()+69 >= self.bulletEnemy.x() >= self.player1.x():
             if self.player1.y() + 53 >= self.bulletEnemy.y() >= self.player1.y():
                 if self.player1.lives > 0:
+                    PLAYER1_SPEED = 4
                     self.bulletEnemy.active = False
                     self.player1.lives -= 1
                     self.removeItem(self.livesPlayer1[-1])
@@ -377,6 +435,7 @@ class Scene(QGraphicsScene):
         if self.player2.x()+69 >= self.bulletEnemy.x() >= self.player2.x():
             if self.player2.y() + 53 >= self.bulletEnemy.y() >= self.player2.y():
                 if self.player2.lives > 0:
+                    PLAYER2_SPEED = 4
                     self.bulletEnemy.active = False
                     self.player2.lives -= 1
                     self.removeItem(self.livesPlayer2[-1])
@@ -384,8 +443,6 @@ class Scene(QGraphicsScene):
                     self.player2.setPos(589, 530)
                     if self.player2.lives <= 0:
                         self.removeItem(self.player2)
-
-
 
         self.bullet1.game_update(self.keys_pressed, self.player1)
         self.bullet2.game_update(self.keys_pressed, self.player2)
@@ -482,23 +539,16 @@ class Scene(QGraphicsScene):
         self.addItem(self.bulletEnemy)
 
 def get_enemy_power_ups(numOfEnemies, numOfPowerUps):
-    r = []
-    while len(r) != numOfPowerUps:
+    ret = []
+    while len(ret) != numOfPowerUps:
         temp = randint(0, numOfEnemies)
-        if r.__contains__(temp):
+        if ret.__contains__(temp):
             continue
         else:
-            r.append(temp)
-    return r
+            ret.append(temp)
+    return ret
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
-
-    pool = multiprocessing.Pool(processes=1)
-    result = pool.apply_async(get_enemy_power_ups, (30, 5))
-    rezultat = result.get(timeout=1)
-    print(type(rezultat))
-    print(str(rezultat))
-
     scene = Scene()
     sys.exit(app.exec_())
