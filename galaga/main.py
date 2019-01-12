@@ -215,6 +215,7 @@ class Scene(QGraphicsScene):
         pool = multiprocessing.Pool(processes=1)
         result = pool.apply_async(get_enemy_power_ups, (29, 5))
         self.enemyPowerUps = result.get(timeout=1)
+        pool.close()
 
         for i in self.enemyPowerUps:
             self.enemies[i].setPixmap(QPixmap("enemyGreen2.png"))
@@ -518,6 +519,15 @@ class Scene(QGraphicsScene):
                         Enemy(131, 90), Enemy(173, 90), Enemy(215, 90), Enemy(257, 90), Enemy(299, 90), Enemy(341, 90),
                         Enemy(383, 90), Enemy(425, 90), Enemy(467, 90), Enemy(509, 90)]
 
+        pool = multiprocessing.Pool(processes=1)
+        result = pool.apply_async(get_enemy_power_ups, (29, 5))
+        self.enemyPowerUps = result.get(timeout=1)
+        pool.close()
+
+        for i in self.enemyPowerUps:
+            self.enemies[i].setPixmap(QPixmap("enemyGreen2.png"))
+            self.enemies[i].powerUp = True
+
         for e in self.enemies:
             self.addItem(e)
 
@@ -547,6 +557,9 @@ def get_enemy_power_ups(numOfEnemies, numOfPowerUps):
         else:
             ret.append(temp)
     return ret
+
+def get_random_num(start, stop):
+    return randint(start, stop)
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
