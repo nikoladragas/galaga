@@ -1,6 +1,7 @@
 import sys
 
 import multiprocessing
+import _thread
 from PyQt5.QtCore import (
     Qt,
     QBasicTimer,
@@ -189,14 +190,6 @@ class Scene(QGraphicsScene):
         # hold the set of keys we're pressing
         self.keys_pressed = set()
 
-        # use a timer to get 60Hz refresh (hopefully)
-        self.timer = QBasicTimer()
-        self.timer.start(FRAME_TIME_MS, self)
-
-        self.timerEnemy = QTimer()
-        self.timerEnemy.timeout.connect(self.game_update_enemy)
-        self.timerEnemy.start(1000)
-
         bg = QGraphicsRectItem()
         bg.setRect(-1, -1, SCREEN_WIDTH + 2, SCREEN_HEIGHT + 2)
         bg.setBrush(QBrush(Qt.black))
@@ -205,7 +198,7 @@ class Scene(QGraphicsScene):
         self.left = 1
         self.right = 5
 
-        self.enemies = [Enemy(131, 10), Enemy(173, 10), Enemy(215, 10), Enemy(257, 10), Enemy(299, 10), Enemy(341, 10),
+        """self.enemies = [Enemy(131, 10), Enemy(173, 10), Enemy(215, 10), Enemy(257, 10), Enemy(299, 10), Enemy(341, 10),
                         Enemy(383, 10), Enemy(425, 10), Enemy(467, 10), Enemy(509, 10),
                         Enemy(131, 50), Enemy(173, 50), Enemy(215, 50), Enemy(257, 50), Enemy(299, 50), Enemy(341, 50),
                         Enemy(383, 50), Enemy(425, 50), Enemy(467, 50), Enemy(509, 50),
@@ -222,7 +215,13 @@ class Scene(QGraphicsScene):
             self.enemies[i].powerUp = True
 
         for e in self.enemies:
-            self.addItem(e)
+            self.addItem(e)"""
+
+        self.threadFinished = False
+        _thread.start_new_thread(self.draw_enemies, ())
+        while not self.threadFinished:
+            continue
+        self.threadFinished = False
 
         self.player1 = Player1()
         self.player1.setPos(20, 530)
@@ -232,7 +231,7 @@ class Scene(QGraphicsScene):
         self.bullet2 = Bullet2(PLAYER_BULLET_X_OFFSETS[1], PLAYER_BULLET_Y)
         self.bulletEnemy = BulletEnemy(ENEMY_BULLET_X_OFFSET, ENEMY_BULLET_Y_OFFSET)
 
-        self.randomEnemyIndex = randint(0, len(self.enemies))
+
 
         self.bullet1.setPos(SCREEN_WIDTH, SCREEN_HEIGHT)
         self.addItem(self.bullet1)
@@ -303,6 +302,14 @@ class Scene(QGraphicsScene):
         self.player2Scores.setPos(674, 420)
         self.player2Scores.setFont(self.scoreFont)
         self.addItem(self.player2Scores)
+
+        # use a timer to get 60Hz refresh (hopefully)
+        self.timer = QBasicTimer()
+        self.timer.start(FRAME_TIME_MS, self)
+
+        self.timerEnemy = QTimer()
+        self.timerEnemy.timeout.connect(self.game_update_enemy)
+        self.timerEnemy.start(1000)
 
         self.view = QGraphicsView(self)
         self.view.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
@@ -493,9 +500,6 @@ class Scene(QGraphicsScene):
         self.randomEnemyIndex = randint(0, len(self.enemies))
 
     def new_level(self):
-        self.timer.start(FRAME_TIME_MS, self)
-        self.timerEnemy.start(1000)
-
         self.level += 1
         self.levelField.setText("Level: " + str(self.level))
 
@@ -512,6 +516,53 @@ class Scene(QGraphicsScene):
         self.left = 1
         self.right = 5
 
+        """self.enemies = [Enemy(131, 10), Enemy(173, 10), Enemy(215, 10), Enemy(257, 10), Enemy(299, 10), Enemy(341, 10),
+                        Enemy(383, 10), Enemy(425, 10), Enemy(467, 10), Enemy(509, 10),
+                        Enemy(131, 50), Enemy(173, 50), Enemy(215, 50), Enemy(257, 50), Enemy(299, 50), Enemy(341, 50),
+                        Enemy(383, 50), Enemy(425, 50), Enemy(467, 50), Enemy(509, 50),
+                        Enemy(131, 90), Enemy(173, 90), Enemy(215, 90), Enemy(257, 90), Enemy(299, 90), Enemy(341, 90),
+                        Enemy(383, 90), Enemy(425, 90), Enemy(467, 90), Enemy(509, 90)]
+
+        pool = multiprocessing.Pool(processes=1)
+        result = pool.apply_async(get_enemy_power_ups, (29, 5))
+        self.enemyPowerUps = result.get(timeout=1)
+        pool.close()
+
+        for i in self.enemyPowerUps:
+            self.enemies[i].setPixmap(QPixmap("enemyGreen2.png"))
+            self.enemies[i].powerUp = True
+
+        for e in self.enemies:
+            self.addItem(e)"""
+
+        self.threadFinished = False
+        _thread.start_new_thread(self.draw_enemies, ())
+        while not self.threadFinished:
+            continue
+        self.threadFinished = False
+
+        if self.player1.lives > 0:
+            self.player1.setPos(20, 530)
+            self.bullet1 = Bullet1(PLAYER_BULLET_X_OFFSETS[1], PLAYER_BULLET_Y)
+            self.bullet1.setPos(SCREEN_WIDTH, SCREEN_HEIGHT)
+            self.addItem(self.bullet1)
+            self.addItem(self.player1)
+        if self.player2.lives > 0:
+            self.player2.setPos(589, 530)
+            self.bullet2 = Bullet2(PLAYER_BULLET_X_OFFSETS[1], PLAYER_BULLET_Y)
+            self.bullet2.setPos(SCREEN_WIDTH, SCREEN_HEIGHT)
+            self.addItem(self.bullet2)
+            self.addItem(self.player2)
+
+        self.bulletEnemy = BulletEnemy(ENEMY_BULLET_X_OFFSET, ENEMY_BULLET_Y_OFFSET)
+        self.bulletEnemy.setPos(SCREEN_WIDTH, SCREEN_HEIGHT)
+        self.addItem(self.bulletEnemy)
+
+        self.timer.start(FRAME_TIME_MS, self)
+        self.timerEnemy.start(1000)
+
+    def draw_enemies(self):
+        self.threadFinished = False
         self.enemies = [Enemy(131, 10), Enemy(173, 10), Enemy(215, 10), Enemy(257, 10), Enemy(299, 10), Enemy(341, 10),
                         Enemy(383, 10), Enemy(425, 10), Enemy(467, 10), Enemy(509, 10),
                         Enemy(131, 50), Enemy(173, 50), Enemy(215, 50), Enemy(257, 50), Enemy(299, 50), Enemy(341, 50),
@@ -531,22 +582,9 @@ class Scene(QGraphicsScene):
         for e in self.enemies:
             self.addItem(e)
 
-        if self.player1.lives > 0:
-            self.player1.setPos(20, 530)
-            self.bullet1 = Bullet1(PLAYER_BULLET_X_OFFSETS[1], PLAYER_BULLET_Y)
-            self.bullet1.setPos(SCREEN_WIDTH, SCREEN_HEIGHT)
-            self.addItem(self.bullet1)
-            self.addItem(self.player1)
-        if self.player2.lives > 0:
-            self.player2.setPos(589, 530)
-            self.bullet2 = Bullet2(PLAYER_BULLET_X_OFFSETS[1], PLAYER_BULLET_Y)
-            self.bullet2.setPos(SCREEN_WIDTH, SCREEN_HEIGHT)
-            self.addItem(self.bullet2)
-            self.addItem(self.player2)
+        self.randomEnemyIndex = randint(0, len(self.enemies))
 
-        self.bulletEnemy = BulletEnemy(ENEMY_BULLET_X_OFFSET, ENEMY_BULLET_Y_OFFSET)
-        self.bulletEnemy.setPos(SCREEN_WIDTH, SCREEN_HEIGHT)
-        self.addItem(self.bulletEnemy)
+        self.threadFinished = True
 
 def get_enemy_power_ups(numOfEnemies, numOfPowerUps):
     ret = []
