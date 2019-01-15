@@ -13,10 +13,10 @@ class Player2(QGraphicsPixmapItem):
     def game_update(self, keys_pressed):
         dx = 0
         if Qt.Key_A in keys_pressed:
-            if self.x() > 15:
+            if self.x() > 20:
                 dx -= self.speed
         if Qt.Key_D in keys_pressed:
-            if self.x() < 590:
+            if self.x() < 589:
                 dx += self.speed
         self.setPos(self.x() + dx, self.y())
 

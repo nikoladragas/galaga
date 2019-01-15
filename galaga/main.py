@@ -76,6 +76,21 @@ class Scene(QGraphicsScene):
         self.bullet2.setPos(SCREEN_WIDTH, SCREEN_HEIGHT)
         self.addItem(self.bullet2)
 
+        # pobednik
+        self.winner = 0
+
+        # power up i power down igraca 1 (plavi)
+        self.player1PowerUp = QGraphicsPixmapItem()
+        self.player1PowerUp.setPixmap(QPixmap("Images/powerUp.png"))
+        self.player1PowerDown = QGraphicsPixmapItem()
+        self.player1PowerDown.setPixmap(QPixmap("Images/powerDown.png"))
+
+        # power up i power down igraca 2 (crveni)
+        self.player2PowerUp = QGraphicsPixmapItem()
+        self.player2PowerUp.setPixmap(QPixmap("Images/powerUp.png"))
+        self.player2PowerDown = QGraphicsPixmapItem()
+        self.player2PowerDown.setPixmap(QPixmap("Images/powerDown.png"))
+
         # protivnicki metak (narandzasti)
         self.bulletEnemy = BulletEnemy(ENEMY_BULLET_X_OFFSET, ENEMY_BULLET_Y_OFFSET)
         self.bulletEnemy.setPos(SCREEN_WIDTH, SCREEN_HEIGHT)
@@ -101,7 +116,7 @@ class Scene(QGraphicsScene):
         self.addItem(self.levelField)
 
         self.playerFont = QFont()
-        self.playerFont.setPixelSize(25)
+        self.playerFont.setPixelSize(20)
         self.playerFont.setBold(1)
 
         # iscrtavanje broja zivota igraca 1
@@ -160,6 +175,7 @@ class Scene(QGraphicsScene):
         self.view.show()
         self.view.setFixedSize(SCREEN_WIDTH, SCREEN_HEIGHT)
         self.setSceneRect(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT)
+        self.view.setGeometry(560, 240, 0, 0)
 
     def keyPressEvent(self, event):
         self.keys_pressed.add(event.key())
@@ -191,9 +207,17 @@ class Scene(QGraphicsScene):
                     if e.powerUp:
                         temp = randint(0, 3)
                         if temp == 0:
+                            if self.player1.speed == 2:
+                                self.removeItem(self.player1PowerDown)
                             self.player1.speed = 8
+                            self.player1PowerUp.setPos(770, 130)
+                            self.addItem(self.player1PowerUp)
                         elif temp == 1:
+                            if self.player1.speed == 8:
+                                self.removeItem(self.player1PowerUp)
                             self.player1.speed = 2
+                            self.player1PowerDown.setPos(770, 130)
+                            self.addItem(self.player1PowerDown)
                         elif temp == 2:
                             if self.player1.lives == 3:
                                 pass
@@ -217,6 +241,7 @@ class Scene(QGraphicsScene):
                     self.addItem(self.bullet1)
                     self.player1Score += 10
                     self.player1Scores.setText("Score: \n" + str(self.player1Score))
+                    continue
 
             # igrac 2 pogodio neprijatelja
             if e.x() <= self.bullet2.x() <= e.x() + 32:
@@ -224,9 +249,17 @@ class Scene(QGraphicsScene):
                     if e.powerUp:
                         temp = randint(0, 3)
                         if temp == 0:
+                            if self.player2.speed == 2:
+                                self.removeItem(self.player2PowerDown)
                             self.player2.speed = 8
+                            self.player2PowerUp.setPos(770, 330)
+                            self.addItem(self.player2PowerUp)
                         elif temp == 1:
+                            if self.player2.speed == 8:
+                                self.removeItem(self.player2PowerUp)
                             self.player2.speed = 2
+                            self.player2PowerDown.setPos(770, 330)
+                            self.addItem(self.player2PowerDown)
                         elif temp == 2:
                             if self.player2.lives == 3:
                                 pass
@@ -250,11 +283,16 @@ class Scene(QGraphicsScene):
                     self.addItem(self.bullet2)
                     self.player2Score += 10
                     self.player2Scores.setText("Score: \n" + str(self.player2Score))
+                    continue
 
             # na igraca 1 se obrusio neprijatelj
             if self.player1.y() <= e.y() + 26 <= self.player1.y() + 53:
                 if self.player1.x() <= e.x() <= self.player1.x() + 69 or self.player1.x() <= e.x() +32 <= self.player1.x() + 69:
                     if self.player1.lives > 0:
+                        if self.player1.speed == 8:
+                            self.removeItem(self.player1PowerUp)
+                        elif self.player1.speed == 2:
+                            self.removeItem(self.player1PowerDown)
                         self.player1.speed = 4
                         e.frames = -1
                         self.player1.lives -= 1
@@ -263,11 +301,21 @@ class Scene(QGraphicsScene):
                         self.player1.setPos(20, 530)
                         if self.player1.lives <= 0:
                             self.removeItem(self.player1)
+                            if self.player1.speed == 8:
+                                self.removeItem(self.player1PowerUp)
+                            elif self.player1.speed == 2:
+                                self.removeItem(self.player1PowerDown)
+                            if self.player2.lives > 0:
+                                self.winner = 2
 
             # na igraca 2 se obrusio neprijatelj
             if self.player2.y() <= e.y() + 26 <= self.player2.y() + 53:
                 if self.player2.x() <= e.x() <= self.player2.x() + 69 or self.player2.x() <= e.x() + 32 <= self.player2.x() + 69:
                     if self.player2.lives > 0:
+                        if self.player2.speed == 8:
+                            self.removeItem(self.player1PowerUp)
+                        elif self.player2.speed == 2:
+                            self.removeItem(self.player2PowerDown)
                         self.player2.speed = 4
                         e.frames = -1
                         self.player2.lives -= 1
@@ -276,11 +324,21 @@ class Scene(QGraphicsScene):
                         self.player2.setPos(589, 530)
                         if self.player2.lives <= 0:
                             self.removeItem(self.player2)
+                            if self.player2.speed == 8:
+                                self.removeItem(self.player2PowerUp)
+                            elif self.player2.speed == 2:
+                                self.removeItem(self.player2PowerDown)
+                            if self.player1.lives > 0:
+                                self.winner = 1
 
         # igraca 1 pogodio laser neprijatelja
         if self.player1.x()+69 >= self.bulletEnemy.x() >= self.player1.x():
             if self.player1.y() + 53 >= self.bulletEnemy.y() >= self.player1.y():
                 if self.player1.lives > 0:
+                    if self.player1.speed == 8:
+                        self.removeItem(self.player1PowerUp)
+                    elif self.player1.speed == 2:
+                        self.removeItem(self.player1PowerDown)
                     self.player1.speed = 4
                     self.bulletEnemy.active = False
                     self.player1.lives -= 1
@@ -289,11 +347,17 @@ class Scene(QGraphicsScene):
                     self.player1.setPos(20, 530)
                     if self.player1.lives <= 0:
                         self.removeItem(self.player1)
+                        if self.player2.lives > 0:
+                            self.winner = 2
 
-        # igraca 1 pogodio laser neprijatelja
+        # igraca 2 pogodio laser neprijatelja
         if self.player2.x()+69 >= self.bulletEnemy.x() >= self.player2.x():
             if self.player2.y() + 53 >= self.bulletEnemy.y() >= self.player2.y():
                 if self.player2.lives > 0:
+                    if self.player2.speed == 8:
+                        self.removeItem(self.player2PowerUp)
+                    elif self.player2.speed == 2:
+                        self.removeItem(self.player2PowerDown)
                     self.player2.speed = 4
                     self.bulletEnemy.active = False
                     self.player2.lives -= 1
@@ -302,6 +366,8 @@ class Scene(QGraphicsScene):
                     self.player2.setPos(589, 530)
                     if self.player2.lives <= 0:
                         self.removeItem(self.player2)
+                        if self.player1.lives > 0:
+                            self.winner = 1
 
         # pomeranje metaka
         self.bullet1.game_update(self.keys_pressed, self.player1)
@@ -322,7 +388,27 @@ class Scene(QGraphicsScene):
 
         # kraj igre
         if self.player1.lives == 0 and self.player2.lives == 0:
-            sys.exit(app.exec_())
+            self.timer.stop()
+            self.timerEnemy.stop()
+            self.removeItem(self.bg)
+            self.bg.setPos(-128, 0)
+            self.addItem(self.bg)
+            fontWinner = QFont()
+            fontWinner.setPixelSize(40)
+            textWinner = QGraphicsSimpleTextItem()
+            textWinner.setFont(fontWinner)
+            if self.winner == 1:
+                textWinner.setText("WINNER PLAYER 1")
+                textWinner.setBrush(QBrush(Qt.blue))
+                self.player1.setPos(310, 300)
+                self.addItem(self.player1)
+            elif self.winner == 2:
+                textWinner.setText("WINNER PLAYER 2")
+                textWinner.setBrush(QBrush(Qt.red))
+                self.player2.setPos(310, 300)
+                self.addItem(self.player2)
+            textWinner.setPos(180, 200)
+            self.addItem(textWinner)
 
         # pobedjen nivo
         if len(self.enemies) == 0:
@@ -429,10 +515,6 @@ def get_enemy_power_ups(numOfEnemies, numOfPowerUps):
         else:
             ret.append(temp)
     return ret
-
-
-def get_random_num(start, stop):
-    return randint(start, stop)
 
 
 if __name__ == '__main__':
