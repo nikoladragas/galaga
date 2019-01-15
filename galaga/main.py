@@ -5,7 +5,9 @@ from random import randint
 from PyQt5.QtCore import (
     QBasicTimer,
     QTimer)
-from PyQt5.QtGui import QBrush, QFont
+from PyQt5.QtGui import (
+    QBrush,
+    QFont)
 from PyQt5.QtWidgets import (
     QGraphicsScene,
     QGraphicsRectItem,
@@ -19,7 +21,7 @@ from galaga.galaga.Enemy import *
 
 SCREEN_WIDTH = 800
 SCREEN_HEIGHT = 600
-PLAYER_BULLET_X_OFFSETS = [0, 32]
+PLAYER_BULLET_X_OFFSETS = 32
 PLAYER_BULLET_Y = -20
 ENEMY_BULLET_X_OFFSET = 14
 ENEMY_BULLET_Y_OFFSET = 26
@@ -67,12 +69,12 @@ class Scene(QGraphicsScene):
         self.addItem(self.player2)
 
         # metak igraca 1 (plavi)
-        self.bullet1 = Bullet1(PLAYER_BULLET_X_OFFSETS[1], PLAYER_BULLET_Y)
+        self.bullet1 = Bullet1(PLAYER_BULLET_X_OFFSETS, PLAYER_BULLET_Y)
         self.bullet1.setPos(SCREEN_WIDTH, SCREEN_HEIGHT)
         self.addItem(self.bullet1)
 
         # metak igraca 2 (crveni)
-        self.bullet2 = Bullet2(PLAYER_BULLET_X_OFFSETS[1], PLAYER_BULLET_Y)
+        self.bullet2 = Bullet2(PLAYER_BULLET_X_OFFSETS, PLAYER_BULLET_Y)
         self.bullet2.setPos(SCREEN_WIDTH, SCREEN_HEIGHT)
         self.addItem(self.bullet2)
 
@@ -460,13 +462,13 @@ class Scene(QGraphicsScene):
 
         if self.player1.lives > 0:
             self.player1.setPos(20, 530)
-            self.bullet1 = Bullet1(PLAYER_BULLET_X_OFFSETS[1], PLAYER_BULLET_Y)
+            self.bullet1 = Bullet1(PLAYER_BULLET_X_OFFSETS, PLAYER_BULLET_Y)
             self.bullet1.setPos(SCREEN_WIDTH, SCREEN_HEIGHT)
             self.addItem(self.bullet1)
             self.addItem(self.player1)
         if self.player2.lives > 0:
             self.player2.setPos(589, 530)
-            self.bullet2 = Bullet2(PLAYER_BULLET_X_OFFSETS[1], PLAYER_BULLET_Y)
+            self.bullet2 = Bullet2(PLAYER_BULLET_X_OFFSETS, PLAYER_BULLET_Y)
             self.bullet2.setPos(SCREEN_WIDTH, SCREEN_HEIGHT)
             self.addItem(self.bullet2)
             self.addItem(self.player2)
@@ -490,7 +492,7 @@ class Scene(QGraphicsScene):
                         Enemy(383, 90), Enemy(425, 90), Enemy(467, 90), Enemy(509, 90)]
 
         pool = multiprocessing.Pool(processes=1)
-        result = pool.apply_async(get_enemy_power_ups, (29, 5))
+        result = pool.apply_async(get_enemy_power_ups, (len(self.enemies)-1, 5))
         self.enemyPowerUps = result.get(timeout=1)
         pool.close()
 
